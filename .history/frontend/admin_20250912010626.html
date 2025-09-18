@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quản trị – Medical Chatbot</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="container header__inner">
+<div class="brand">
+<div class="brand__logo" aria-hidden="true">📊</div>
+<div class="brand__text">
+<h1>Bảng điều khiển</h1>
+<p>Theo dõi tương tác và chất lượng</p>
+</div>
+</div>
+<nav class="header__nav">
+<a class="btn btn--ghost" href="index.html">← Trở lại Chat</a>
+</nav>
+</div>
+</header>
+
+
+<main class="container layout layout--admin" role="main">
+<section class="panel">
+<h2 class="panel__title">Tổng quan</h2>
+<div class="stats">
+<div class="stat"><div class="stat__num" id="st-sessions">0</div><div class="stat__label">Phiên hôm nay</div></div>
+<div class="stat"><div class="stat__num" id="st-wait">0</div><div class="stat__label">Yêu cầu lấy số</div></div>
+<div class="stat"><div class="stat__num" id="st-avg">–</div><div class="stat__label">Thời gian phản hồi</div></div>
+</div>
+</section>
+
+
+<section class="panel">
+<h2 class="panel__title">Nhật ký hội thoại</h2>
+<div class="toolbar">
+<input class="input" id="search" placeholder="Tìm theo tên, số ĐT, triệu chứng…" />
+<button class="btn btn--outline" id="btn-export">Xuất CSV</button>
+</div>
+<div class="log" id="log" aria-live="polite"></div>
+</section>
+</main>
+
+
+<footer class="site-footer" role="contentinfo">
+<div class="container footer__inner">
+<small>© <span id="y"></span> Bệnh viện</small>
+</div>
+</footer>
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+<script src="app.js"></script>
+</body>
+</html>

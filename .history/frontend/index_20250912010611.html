@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Medical Chatbot – Bệnh viện</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="data:,">
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="container header__inner">
+<div class="brand">
+<div class="brand__logo" aria-hidden="true">🏥</div>
+<div class="brand__text">
+<h1>Medical Chatbot</h1>
+<p>Bệnh viện – Hỗ trợ tư vấn và hướng dẫn khám</p>
+</div>
+</div>
+<nav class="header__nav" aria-label="Tác vụ nhanh">
+<button class="btn btn--ghost" id="btn-new">Cuộc trò chuyện mới</button>
+<button class="btn btn--ghost" id="btn-history">Lịch sử</button>
+<a href="admin.html" class="btn btn--primary" aria-label="Trang quản trị">Quản trị</a>
+</nav>
+</div>
+</header>
+
+
+<main class="container layout" role="main">
+<!-- Sidebar: Thông tin bệnh nhân ngắn gọn -->
+<aside class="panel panel--side" aria-label="Thông tin bệnh nhân">
+<h2 class="panel__title">Thông tin nhanh</h2>
+<form id="patient-form" class="form" autocomplete="on">
+<label class="form__label">Họ và tên
+<input class="input" name="name" placeholder="Nguyễn Văn A" />
+</label>
+<div class="grid grid--2">
+<label class="form__label">Tuổi
+<input class="input" name="age" type="number" min="0" max="120" placeholder="35" />
+</label>
+<label class="form__label">Giới tính
+<select class="input" name="gender">
+<option value="">—</option>
+<option>Nam</option>
+<option>Nữ</option>
+<option>Khác</option>
+</select>
+</label>
+</div>
+<label class="form__label">Số điện thoại
+<input class="input" name="phone" type="tel" placeholder="09xx xxx xxx" />
+</label>
+<label class="form__label">Triệu chứng chính
+<input class="input" name="chief_complaint" placeholder="Đau đầu, ho, sốt…" />
+</label>
+<button type="button" id="btn-apply-profile" class="btn btn--primary btn--block">Áp dụng vào trò chuyện</button>
+</form>
+
+
+</html>

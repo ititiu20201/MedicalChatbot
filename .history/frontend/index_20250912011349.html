@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Medical Chatbot — Chat Demo</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h2>Medical Chatbot — Chat</h2>
+      <div id="user-meta">
+        <label>Mã phiên (user_id): <span id="user-id"></span></label>
+        <button id="reset-btn" title="Bắt đầu phiên mới">Phiên mới</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="chat">
+        <div id="chat-box"></div>
+        <div class="composer">
+          <textarea id="user-input" placeholder="Nhập tin nhắn hoặc trả lời câu hỏi..."></textarea>
+          <button id="send-btn">Gửi</button>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="panel">
+          <h3>Tiến độ slot</h3>
+          <div class="slots">
+            <div><strong>Đã điền</strong><ul id="filled-slots"></ul></div>
+            <div><strong>Thiếu</strong><ul id="missing-slots"></ul></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Hành động tiếp theo</h3>
+          <div id="next-action">—</div>
+        </div>
+
+        <div class="panel">
+          <h3>Tiện ích</h3>
+          <button id="export-btn">Xuất Excel</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
