@@ -3,8 +3,8 @@
 
 const CONFIG = {
   // API Base URL - Update this for different deployment environments
-  API_BASE: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://127.0.0.1:8000'  // Local development
+  API_BASE: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8003'  // Local development
     : '/api',                  // Production with proxy or same domain
   
   // Alternative configurations for different environments:
