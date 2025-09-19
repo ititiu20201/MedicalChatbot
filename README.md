@@ -51,7 +51,7 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 - **AWS/Cloud** - Scalable hosting options
 - **Nginx** - Load balancing and SSL termination
 
-## 🚦 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -113,10 +113,7 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 ## 📖 Documentation
 
 ### Essential Guides
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete production deployment guide
-- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - Comprehensive system documentation
-- **[PRESENTATION_SCRIPT.md](PRESENTATION_SCRIPT.md)** - Investor presentation materials
-- **[CLAUDE.md](CLAUDE.md)** - Development guidelines and project instructions
+Documentation available in project folder (not included in repository)
 
 ### API Reference
 - **Health Check**: `GET /health`
@@ -237,7 +234,7 @@ docker-compose up -d
 
 # Access services
 # Frontend: http://localhost:5500
-# API: http://localhost:8000
+# API: http://localhost:8003
 ```
 
 ### Production (AWS/Cloud)
@@ -245,7 +242,7 @@ docker-compose up -d
 - Includes AWS, Kubernetes, and security configurations
 - Complete monitoring and backup strategies
 
-## 📋 Large Files & Assets
+##  Large Files & Assets
 
 Due to GitHub size limitations, the following files must be downloaded separately:
 
@@ -257,7 +254,7 @@ Due to GitHub size limitations, the following files must be downloaded separatel
 
 Contact the repository maintainers or check releases for download links.
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions to improve the Vietnamese Medical AI platform!
 
@@ -280,7 +277,7 @@ We welcome contributions to improve the Vietnamese Medical AI platform!
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **VinAI Research** for PhoBERT Vietnamese language model
 - **Google** for Gemini AI conversational capabilities
@@ -305,7 +302,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Compliance**: Healthcare data protection and privacy guidance
 
 ---
-
-**Made with ❤️ for Vietnamese healthcare communities worldwide**
-
-*Transforming healthcare through AI - one conversation at a time*

@@ -91,7 +91,10 @@ temp/
 *.tmp
 
 # Large data files
-data/large/
+data/
+docs/
+sample_data/
+CLAUDE.md
 *.csv.gz
 *.xlsx
 *.zip
