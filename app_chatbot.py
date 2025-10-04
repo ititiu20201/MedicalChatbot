@@ -13,7 +13,6 @@ import re
 import os
 import json
 import uuid
-import tempfile
 from typing import Dict, List
 from dataclasses import dataclass
 
@@ -34,14 +33,14 @@ from app.models import PatientRecord
 
 # Import conversation components
 from app.schemas import ChatIn, ChatOut, LLMOutput, REQUIRED_SLOTS
-from app.state_store import get_state, merge_slots
+from app.state_store import merge_slots, get_slots, get_off_topic_count, increment_off_topic_count, update_fields
 from app.gemini_service import call_gemini
 
 # ========= CONFIGURATION =========
 load_dotenv()
 
 HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", "8000"))
+PORT = int(os.getenv("PORT", "8003"))
 
 # PhoBERT Model Configuration
 MODEL_PATH = os.getenv("MODEL_PATH", "app/models/phobert_medchat_model.pt")
@@ -147,7 +146,7 @@ class SymptomClassifier(nn.Module):
         self.dropout = nn.Dropout(0.3)
         self.fc = nn.Linear(self.bert.config.hidden_size, num_labels)
 
-    def forward(self, input_ids, attention_mask, **kwargs):
+    def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
         # Use [CLS] token representation
         pooled = outputs.last_hidden_state[:, 0]
@@ -181,7 +180,8 @@ def infer_diseases(text: str, conf: InferConfig = INF_CONF) -> Dict[str, float]:
     enc = TOKENIZER(
         text, return_tensors="pt", truncation=True, padding=True, max_length=256
     )
-    enc = {k: v.to(DEVICE) for k, v in enc.items()}
+    # Filter out token_type_ids which PhoBERT model doesn't expect
+    enc = {k: v.to(DEVICE) for k, v in enc.items() if k != 'token_type_ids'}
 
     with torch.no_grad():
         logits = MODEL(**enc)
@@ -193,14 +193,16 @@ def infer_diseases(text: str, conf: InferConfig = INF_CONF) -> Dict[str, float]:
     # Filter by threshold
     idxs = [i for i, p in enumerate(probs_list) if p >= conf.threshold]
 
-    # If no predictions above threshold, take top-1
+    # If no predictions above threshold, take top-k anyway
     if not idxs:
-        top1 = int(probs.argmax().item())
-        idxs = [top1]
-
-    # Sort by probability descending and take top_k
-    idxs.sort(key=lambda i: probs_list[i], reverse=True)
-    idxs = idxs[:conf.top_k]
+        # Get all indices sorted by probability
+        all_idxs = list(range(len(probs_list)))
+        all_idxs.sort(key=lambda i: probs_list[i], reverse=True)
+        idxs = all_idxs[:conf.top_k]
+    else:
+        # Sort by probability descending and take top_k
+        idxs.sort(key=lambda i: probs_list[i], reverse=True)
+        idxs = idxs[:conf.top_k]
 
     return {ID2LABEL[i]: round(float(probs_list[i]), 4) for i in idxs}
 
@@ -210,17 +212,23 @@ app = FastAPI(title="Medical Chatbot - Vietnamese PhoBERT System")
 # CORS Configuration
 origins = [
     "http://127.0.0.1:5500",
-    "http://localhost:5500", 
+    "http://localhost:5500",
     "http://127.0.0.1:5501",
     "http://localhost:5501",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    "null",  # For file:// protocol
+    "*",     # Allow all origins for development
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=False,  # Disable credentials when using wildcard
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -272,47 +280,117 @@ def chat(body: ChatIn, db: Session = Depends(get_db)):
     user_id = body.user_id
     message = body.message
 
-    # 1) Get current conversation state
-    state = get_state(user_id)
+    # 1) Get current slots and off-topic count
+    slots = get_slots(user_id)
+    off_topic_count = get_off_topic_count(user_id)
 
-    # 2) Call Gemini LLM with structured JSON schema
-    llm_out = call_gemini(message, state)
+    # 2) Call Gemini LLM with structured JSON schema and off-topic context
+    llm_out = call_gemini(message, slots, off_topic_count)
     parsed = LLMOutput(**llm_out)
 
-    # 3) Merge newly extracted slots into state
-    filled = merge_slots(user_id, parsed.slots_extracted)
+    # 3) Handle field updates first (corrections/modifications)
+    if parsed.field_updates:
+        filled = update_fields(user_id, parsed.field_updates)
+    else:
+        # 4) Merge newly extracted slots into state (only if not updating)
+        filled = merge_slots(user_id, parsed.slots_extracted)
 
-    # 4) Calculate missing slots
+    # 5) Calculate missing slots
     missing = [s for s in REQUIRED_SLOTS if not filled.get(s)]
 
-    # 5) Decision branch: handle different conversation states
-    if parsed.next_action == "call_phobert" and not missing:
+    # 5) Handle off-topic responses first
+    if parsed.next_action == "off_topic_response" or parsed.is_off_topic:
+        # Increment off-topic counter
+        new_count = increment_off_topic_count(user_id)
+
+        if new_count >= 2:
+            # Limit reached - use response without additional guidance
+            assist_msg = parsed.assistant_message
+            next_action = "guide_back_to_medical"
+        else:
+            # Still within limit
+            assist_msg = parsed.assistant_message
+            next_action = "off_topic_response"
+
+    # 6) Handle information recall queries
+    elif parsed.next_action == "information_recall":
+        assist_msg = parsed.assistant_message
+        next_action = "information_recall"
+
+    # 6.5) Handle information update confirmations
+    elif parsed.next_action == "information_updated":
+        assist_msg = parsed.assistant_message
+        next_action = "information_updated"
+
+        # Save field updates to database immediately when all information is complete
+        if not missing:
+            existing_record = db.query(PatientRecord).filter(PatientRecord.user_id == user_id).first()
+
+            if existing_record:
+                # Update existing record with latest field updates
+                existing_record.patient_name = filled.get("name", "")
+                existing_record.patient_phone = filled.get("phone_number", "")
+                existing_record.patient_age = filled.get("age", "")
+                existing_record.patient_gender = filled.get("gender", "")
+                existing_record.symptoms = filled.get("symptoms", "")
+                existing_record.onset = filled.get("onset", "")
+                existing_record.allergies = filled.get("allergies", "")
+                existing_record.current_medications = filled.get("current_medications", "")
+                existing_record.pain_scale = filled.get("pain_scale", "")
+                existing_record.chat = json.dumps({"filled": filled, "missing": missing}, ensure_ascii=False)
+                db.commit()
+                print(f"✅ Updated existing patient record for user {user_id} with field changes")
+            else:
+                print(f"⚠️ No existing record found for user {user_id} during field update")
+
+    # 7) Decision branch: handle different conversation states
+    elif parsed.next_action == "call_phobert" and not missing:
         text_for_model = filled.get("symptoms") or message
         preds = infer_diseases(text_for_model)
         dept = recommend_department(preds)
 
-        # Save patient record to database with separate columns
-        record = PatientRecord(
-            record_id=str(uuid.uuid4()),
-            user_id=user_id,
-            # Patient Information
-            patient_name=filled.get("name", ""),
-            patient_phone=filled.get("phone_number", ""),
-            patient_age=filled.get("age", ""),
-            patient_gender=filled.get("gender", ""),
-            # Medical Information
-            symptoms=filled.get("symptoms", ""),
-            onset=filled.get("onset", ""),
-            allergies=filled.get("allergies", ""),
-            current_medications=filled.get("current_medications", ""),
-            pain_scale=filled.get("pain_scale", ""),
-            # Results
-            predicted_diseases=json.dumps(preds, ensure_ascii=False),
-            recommended_department=dept,
-            # System
-            chat=json.dumps({"filled": filled, "missing": missing}, ensure_ascii=False),
-        )
-        db.add(record)
+        # Upsert patient record to database (update if exists, insert if new)
+        existing_record = db.query(PatientRecord).filter(PatientRecord.user_id == user_id).first()
+
+        if existing_record:
+            # Update existing record with latest information
+            existing_record.patient_name = filled.get("name", "")
+            existing_record.patient_phone = filled.get("phone_number", "")
+            existing_record.patient_age = filled.get("age", "")
+            existing_record.patient_gender = filled.get("gender", "")
+            existing_record.symptoms = filled.get("symptoms", "")
+            existing_record.onset = filled.get("onset", "")
+            existing_record.allergies = filled.get("allergies", "")
+            existing_record.current_medications = filled.get("current_medications", "")
+            existing_record.pain_scale = filled.get("pain_scale", "")
+            existing_record.predicted_diseases = json.dumps(preds, ensure_ascii=False)
+            existing_record.recommended_department = dept
+            existing_record.chat = json.dumps({"filled": filled, "missing": missing}, ensure_ascii=False)
+            # Keep original record_id and created_at, but update timestamp implicitly
+        else:
+            # Create new record for first-time consultation
+            record = PatientRecord(
+                record_id=str(uuid.uuid4()),
+                user_id=user_id,
+                # Patient Information
+                patient_name=filled.get("name", ""),
+                patient_phone=filled.get("phone_number", ""),
+                patient_age=filled.get("age", ""),
+                patient_gender=filled.get("gender", ""),
+                # Medical Information
+                symptoms=filled.get("symptoms", ""),
+                onset=filled.get("onset", ""),
+                allergies=filled.get("allergies", ""),
+                current_medications=filled.get("current_medications", ""),
+                pain_scale=filled.get("pain_scale", ""),
+                # Results
+                predicted_diseases=json.dumps(preds, ensure_ascii=False),
+                recommended_department=dept,
+                # System
+                chat=json.dumps({"filled": filled, "missing": missing}, ensure_ascii=False),
+            )
+            db.add(record)
+
         db.commit()
 
         # After diagnosis, ask final confirmation
@@ -342,7 +420,11 @@ def chat(body: ChatIn, db: Session = Depends(get_db)):
         filled_slots=filled,
         missing_slots=missing,
         next_action=next_action,
-        debug={"llm_next_action": parsed.next_action}
+        debug={
+            "llm_next_action": parsed.next_action,
+            "off_topic_count": get_off_topic_count(user_id),
+            "is_off_topic": parsed.is_off_topic
+        }
     )
 
 @app.get("/patients")

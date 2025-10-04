@@ -5,11 +5,15 @@ class MedicalChatbot {
   constructor() {
     // Get configuration from config.js
     const config = window.MEDICAL_CHATBOT_CONFIG || {};
-    this.API_BASE = config.API_BASE || 'http://127.0.0.1:8000';
+    this.API_BASE = config.API_BASE || 'http://127.0.0.1:8003';
     this.config = config;
     this.sessionId = this.getOrCreateSession();
     this.isTyping = false;
     this.isDuplicate = false;
+
+    // Conversation state tracking
+    this.lastBotResponse = null;
+    this.currentMissingSlots = [];
     
     // UI Elements
     this.chatBox = document.getElementById('chat-box');
@@ -269,6 +273,10 @@ class MedicalChatbot {
     } else {
       this.updateActionStatus('collecting', 'Đang thu thập thông tin bệnh nhân');
     }
+
+    // Store current state for tracking
+    this.currentMissingSlots = response.missing_slots || [];
+    this.lastBotResponse = response.next_action;
   }
 
   updateSlotsDisplay(filledSlots, missingSlots) {
@@ -878,7 +886,7 @@ class MedicalChatbot {
       slotItems.forEach(item => {
         const label = item.querySelector('.slot-label')?.textContent || '';
         const value = item.querySelector('.slot-value')?.textContent || '';
-        
+
         // Map Vietnamese labels to data fields
         if (label.includes('Họ và tên')) patientData.patient_name = value;
         else if (label.includes('Số điện thoại')) patientData.patient_phone = value;
@@ -890,6 +898,33 @@ class MedicalChatbot {
         else if (label.includes('Thuốc đang dùng')) patientData.current_medications = value;
         else if (label.includes('Mức độ đau')) patientData.pain_scale = value;
       });
+    }
+
+    // If no data from slots, try localStorage
+    if (!patientData.patient_name && !patientData.symptoms) {
+      const historyPrefix = this.config.HISTORY_STORAGE_PREFIX || 'medical_history_';
+      const history = localStorage.getItem(`${historyPrefix}${this.sessionId}`);
+
+      if (history) {
+        try {
+          const parsedHistory = JSON.parse(history);
+          const lastEntry = parsedHistory[parsedHistory.length - 1];
+
+          if (lastEntry && lastEntry.filled_slots) {
+            patientData.patient_name = lastEntry.filled_slots.name || '';
+            patientData.patient_phone = lastEntry.filled_slots.phone_number || '';
+            patientData.patient_age = lastEntry.filled_slots.age || '';
+            patientData.patient_gender = lastEntry.filled_slots.gender || '';
+            patientData.symptoms = lastEntry.filled_slots.symptoms || '';
+            patientData.onset = lastEntry.filled_slots.onset || '';
+            patientData.allergies = lastEntry.filled_slots.allergies || '';
+            patientData.current_medications = lastEntry.filled_slots.current_medications || '';
+            patientData.pain_scale = lastEntry.filled_slots.pain_scale || '';
+          }
+        } catch (e) {
+          console.error('Error parsing history:', e);
+        }
+      }
     }
 
     // Try to fetch completed consultation data from backend
@@ -976,7 +1011,12 @@ class MedicalChatbot {
     
     // Show empty state if no data
     if (!patientData.patient_name && !patientData.symptoms) {
-      content = '<div class="profile-empty">Chưa có thông tin hồ sơ. Vui lòng nhập thông tin cơ bản trước.</div>';
+      content = `<div class="profile-empty">
+        <h3>Chưa có thông tin hồ sơ</h3>
+        <p>Vui lòng nhập thông tin cơ bản trước khi xem hồ sơ.</p>
+        <p><strong>Mã phiên:</strong> ${patientData.record_id}</p>
+        <p><em>Hệ thống đang thu thập thông tin của bạn. Vui lòng trả lời các câu hỏi để hoàn tất hồ sơ.</em></p>
+      </div>`;
     }
     
     modalBody.innerHTML = content;
@@ -1110,6 +1150,7 @@ class MedicalChatbot {
       }, 300);
     }, 4000);
   }
+
 }
 
 // ========= Initialize Application =========

@@ -1,1 +1,0 @@
-https://github.com/ititiu20201/MedicalChatbot.git
