@@ -46,12 +46,41 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 
 ### Prerequisites
 
-- Python 3.8+
-- MySQL 8.0+
-- Node.js (for frontend development)
+- **Option 1 (Docker - Recommended)**: Docker 20.10+ and Docker Compose 2.0+
+- **Option 2 (Manual)**: Python 3.8+, MySQL 8.0+, Node.js
 - Gemini API Key
 
-### Installation
+### Option 1: Docker Deployment (Recommended)
+
+**Fastest way to get started!**
+
+1. **Clone and configure**
+   ```bash
+   git clone https://github.com/ititiu20201/MedicalChatbot.git
+   cd MedicalChatbot
+   cp .env.example .env
+   # Edit .env with your Gemini API key
+   ```
+
+2. **Download PhoBERT model**
+   ```bash
+   mkdir -p app/models
+   # Place phobert_medchat_model.pt in app/models/
+   ```
+
+3. **Start all services**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the application**
+   - Patient Interface: `http://localhost:5500`
+   - Admin Dashboard: `http://localhost:5500/admin.html`
+   - API Documentation: `http://localhost:8003/docs`
+
+📚 **Full Docker guide**: See [DOCKER.md](DOCKER.md) for detailed instructions
+
+### Option 2: Manual Installation
 
 1. **Clone the repository**
    ```bash
@@ -208,7 +237,28 @@ const CONFIG = {
 
 ## 🚀 Deployment Options
 
-### Local Development
+### 🐳 Docker (Recommended)
+```bash
+# One-command deployment
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+**Services included:**
+- ✅ FastAPI Backend (Port 8003)
+- ✅ MySQL Database (Port 3306)
+- ✅ Nginx Frontend (Port 5500)
+- ✅ Automatic health checks
+- ✅ Data persistence with volumes
+
+📚 **Complete guide**: [DOCKER.md](DOCKER.md)
+
+### 💻 Local Development
 ```bash
 # Backend
 python app_chatbot.py
@@ -217,17 +267,7 @@ python app_chatbot.py
 cd frontend && python -m http.server 5500
 ```
 
-### Docker Deployment
-```bash
-# Build and run
-docker-compose up -d
-
-# Access services
-# Frontend: http://localhost:5500
-# API: http://localhost:8003
-```
-
-### Production (AWS/Cloud)
+### ☁️ Production (AWS/Cloud)
 - See **[DEPLOYMENT.md](DEPLOYMENT.md)** for comprehensive production setup
 - Includes AWS, Kubernetes, and security configurations
 - Complete monitoring and backup strategies
