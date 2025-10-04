@@ -22,13 +22,6 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 - 🌐 **Modern Interface**: Hospital-grade web UI with Vietnamese IME support
 - 📊 **Admin Dashboard**: Comprehensive analytics and patient management
 
-### 🎯 Business Impact
-
-- **89.2% diagnostic accuracy** on Vietnamese medical terminology
-- **35% reduction** in patient intake time
-- **42% increase** in patient satisfaction
-- **First-to-market** Vietnamese medical AI platform
-- **Hospital-grade** security and accessibility compliance
 
 ## 🛠 Technology Stack
 
@@ -47,9 +40,7 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 
 ### Infrastructure
 - **Docker** - Containerized deployment
-- **Kubernetes** - Production orchestration
-- **AWS/Cloud** - Scalable hosting options
-- **Nginx** - Load balancing and SSL termination
+
 
 ##  Quick Start
 
@@ -199,7 +190,6 @@ const CONFIG = {
 ## 📊 Performance Metrics
 
 ### Accuracy & Reliability
-- **89.2%** diagnostic accuracy on Vietnamese medical conditions
 - **94%** correct department routing recommendations
 - **99.7%** API uptime and reliability
 - **Zero** false negatives for emergency conditions
