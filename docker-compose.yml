@@ -26,7 +26,9 @@ services:
 
   # Backend API
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     container_name: medical_chatbot_backend
     restart: unless-stopped
     ports:
@@ -35,12 +37,12 @@ services:
       - DATABASE_URL=mysql+pymysql://${DB_USER:-medchat}:${DB_PASSWORD:-medchat123}@mysql:3306/${DB_NAME:-medical_chatbot}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash}
-      - MODEL_PATH=app/models/phobert_medchat_model.pt
-      - ID2LABEL_PATH=app/assets/id2label.json
+      - MODEL_PATH=app/models/ml/phobert_medchat_model.pt
+      - ID2LABEL_PATH=app/utils/mappings/id2label.json
     volumes:
       - ./app:/app/app
       - ./frontend:/app/frontend
-      - model_data:/app/app/models
+      - model_data:/app/app/models/ml
     depends_on:
       mysql:
         condition: service_healthy
@@ -61,7 +63,7 @@ services:
       - "5500:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
     networks:

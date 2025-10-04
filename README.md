@@ -114,9 +114,9 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 
 1. **Start the backend**
    ```bash
-   python app_chatbot.py
+   uvicorn app.main:app --reload --port 8003
    # or
-   uvicorn app_chatbot:app --reload --port 8000
+   python -m app.main
    ```
 
 2. **Serve the frontend**
@@ -128,7 +128,7 @@ The Vietnamese Medical Chatbot System is the world's **first production-ready AI
 3. **Access the system**
    - Patient Interface: `http://localhost:5500`
    - Admin Dashboard: `http://localhost:5500/admin.html`
-   - API Documentation: `http://localhost:8000/docs`
+   - API Documentation: `http://localhost:8003/docs`
 
 ## 📖 Documentation
 
@@ -145,21 +145,36 @@ Documentation available in project folder (not included in repository)
 ### Project Structure
 ```
 MedicalChatbot/
-├── app/                    # Core backend modules
-│   ├── assets/            # Model assets and mappings
-│   ├── models.py          # Database models
-│   ├── schemas.py         # API validation schemas
-│   ├── gemini_service.py  # Gemini AI integration
-│   └── department_map.json # Disease-to-department routing
-├── frontend/              # Web interface
-│   ├── index.html        # Patient consultation interface
-│   ├── admin.html        # Hospital admin dashboard
-│   ├── app.js            # Frontend logic
-│   └── config.js         # Environment configuration
-├── data/                  # Sample datasets and mappings
-├── DEPLOYMENT.md          # Production deployment guide
-├── PROJECT_OVERVIEW.md    # Complete system documentation
-└── requirements.txt       # Python dependencies
+├── app/                           # Main application package
+│   ├── main.py                   # FastAPI application entry point
+│   ├── api/                      # API routes (extensible)
+│   ├── core/                     # Core functionality
+│   │   ├── database.py          # Database connection
+│   │   └── state_store.py       # State management
+│   ├── models/                   # Database & ML models
+│   │   ├── database_models.py   # SQLAlchemy models
+│   │   └── ml/                  # PhoBERT model
+│   ├── schemas/                  # Pydantic validation schemas
+│   │   └── chat_schemas.py
+│   ├── services/                 # Business logic
+│   │   └── gemini_service.py    # Gemini AI integration
+│   └── utils/                    # Utilities & mappings
+│       ├── department_map.json
+│       └── mappings/            # Disease label mappings
+├── docker/                       # Docker configuration
+│   ├── Dockerfile
+│   └── nginx.conf
+├── frontend/                     # Web interface
+│   ├── index.html               # Patient consultation interface
+│   ├── admin.html               # Hospital admin dashboard
+│   ├── app.js                   # Frontend logic
+│   └── config.js                # Environment configuration
+├── notebooks/                    # Jupyter notebooks for training
+├── scripts/                      # Utility scripts
+├── tests/                        # Unit tests
+├── data/                         # Training datasets
+├── docker-compose.yml            # Full stack deployment
+└── requirements.txt              # Python dependencies
 ```
 
 ## 🏥 Medical Capabilities
@@ -261,7 +276,7 @@ docker-compose down
 ### 💻 Local Development
 ```bash
 # Backend
-python app_chatbot.py
+uvicorn app.main:app --reload --port 8003
 
 # Frontend
 cd frontend && python -m http.server 5500

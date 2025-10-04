@@ -28,13 +28,13 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session
-from app.db import get_db
-from app.models import PatientRecord
+from app.core.database import get_db
+from app.models.database_models import PatientRecord
 
 # Import conversation components
-from app.schemas import ChatIn, ChatOut, LLMOutput, REQUIRED_SLOTS
-from app.state_store import merge_slots, get_slots, get_off_topic_count, increment_off_topic_count, update_fields
-from app.gemini_service import call_gemini
+from app.schemas.chat_schemas import ChatIn, ChatOut, LLMOutput, REQUIRED_SLOTS
+from app.core.state_store import merge_slots, get_slots, get_off_topic_count, increment_off_topic_count, update_fields
+from app.services.gemini_service import call_gemini
 
 # ========= CONFIGURATION =========
 load_dotenv()
@@ -43,8 +43,8 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8003"))
 
 # PhoBERT Model Configuration
-MODEL_PATH = os.getenv("MODEL_PATH", "app/models/phobert_medchat_model.pt")
-ID2LABEL_PATH = os.getenv("ID2LABEL_PATH", "app/assets/id2label.json")
+MODEL_PATH = os.getenv("MODEL_PATH", "app/models/ml/phobert_medchat_model.pt")
+ID2LABEL_PATH = os.getenv("ID2LABEL_PATH", "app/utils/mappings/id2label.json")
 
 # Prediction Configuration
 TOP_K = int(os.getenv("TOP_K", "3"))
@@ -53,7 +53,7 @@ THRESHOLD = float(os.getenv("THRESHOLD", "0.5"))
 # Department Mapping Configuration
 DEPARTMENT_DEFAULT = os.getenv("DEPARTMENT_DEFAULT", "Khám tổng quát")
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEPARTMENT_MAP_PATH = os.getenv("DEPARTMENT_MAP_PATH", os.path.join(SCRIPT_DIR, "app", "department_map.json"))
+DEPARTMENT_MAP_PATH = os.getenv("DEPARTMENT_MAP_PATH", os.path.join(SCRIPT_DIR, "utils", "department_map.json"))
 
 # ========= DEPARTMENT MAPPING =========
 def load_department_map(path: str) -> dict:

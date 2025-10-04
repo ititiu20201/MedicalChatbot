@@ -6,7 +6,7 @@ import json
 import time
 from typing import Dict, Any
 import requests
-from .schemas import LLMOutput, REQUIRED_SLOTS
+from app.schemas.chat_schemas import LLMOutput, REQUIRED_SLOTS
 
 # Load environment variables first
 from dotenv import load_dotenv
